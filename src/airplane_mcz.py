@@ -18,8 +18,8 @@ ground_color = [0.3, 0.3, 0.9, 1.0]     # the ground color
 airplane_color = [0.4, 0.4, 0.4, 1.0]   # the airplane color
 position = [0.0, 2.0, - 3.0]            # initial position of the airplane
 ang = [0.0, 1.0, 0.0, 0.0]              # initial angle of the airplane
-obs = [0.0, 7.0, 0.0]                   # watcher position coordinates
-look = [0.0, 3.0, 0.0]                  # watcher lookat coordinates
+watcher_coordinates = [0.0, 7.0, 0.0]   # watcher position coordinates
+target_coordinates = [0.0, 3.0, 0.0]    # watcher target coordinates
 luz = True                              # light control bool variable
 autopilot = False                       # autopilot control bool variable
 texture_ground = None                   # var for save ground's texture id
@@ -27,6 +27,7 @@ texture_airplane = None                 # var for save airplane's texture id
 quadric = GLUquadricObj()               # data structure for save our quadric surfaces
 airplane = GLuint                       # airplane list id
 moon = GLuint                           # moon list id
+
 # matrix with the coords for place the texture along all the airplane
 airplane_texture_coordinates = [[-coord_text_airplane, -coord_text_airplane],
                                 [+coord_text_airplane, -coord_text_airplane],
@@ -68,48 +69,55 @@ def makeAirplane():
     global airplane, quadric
     if luz:
         light()
-    asa = [[-2.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 1.5]]
-    cauda = [[0.0, 0.0, 0.0], [0.0, 1.0, -1.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    # tail and wing coordinates for drawing
+    wing = [[-2.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 1.5]]
+    tail = [[0.0, 0.0, 0.0], [0.0, 1.0, -1.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
     airplane = glGenLists(1)
     glNewList(airplane, GL_COMPILE)
 
-
+    # Drawing the airplane wing
     glBegin(GL_TRIANGLES)
     glTexCoord2fv(airplane_texture_coordinates[0])
-    glVertex3fv(asa[0])
+    glVertex3fv(wing[0])
     glTexCoord2fv(airplane_texture_coordinates[1])
-    glVertex3fv(asa[1])
+    glVertex3fv(wing[1])
     glTexCoord2fv(airplane_texture_coordinates[3])
-    glVertex3fv(asa[2])
+    glVertex3fv(wing[2])
     glEnd()
+
+    # Drawing the airplane body
     quadric = gluNewQuadric()
     gluQuadricTexture(quadric, GL_TRUE)
     gluCylinder(quadric, 0.25, 0.25, 2, 12, 3)
     quadric = gluNewQuadric()
     gluQuadricTexture(quadric, GL_TRUE)
+
+    # Drawing the airplane nose
     glPushMatrix()
     glTranslatef(0, 0, 2)
     gluCylinder(quadric, 0.25, 0.0, 0.75, 12, 3)
     glPopMatrix()
 
+    # Drawing the airplane tail
     glBegin(GL_POLYGON)
     glTexCoord2fv(airplane_texture_coordinates[0])
-    glVertex3fv(cauda[0])
+    glVertex3fv(tail[0])
     glTexCoord2fv(airplane_texture_coordinates[1])
-    glVertex3fv(cauda[1])
+    glVertex3fv(tail[1])
     glTexCoord2fv(airplane_texture_coordinates[2])
-    glVertex3fv(cauda[2])
+    glVertex3fv(tail[2])
     glTexCoord2fv(airplane_texture_coordinates[3])
-    glVertex3fv(cauda[3])
+    glVertex3fv(tail[3])
     glEnd()
 
+    # Drawing airplane cabin
     glTranslatef(0, 0.15, 1.75)
     glPushMatrix()
     glScalef(0.4, 0.4, 1.0)
     quadric = gluNewQuadric()
-    glColor3f(0.3, 0.5, 1)
-
+    glColor3f(0.2, 0.4, 1)
     glDisable(GL_TEXTURE_2D)
     gluSphere(quadric, 0.5, 12, 12)
     glPopMatrix()
@@ -144,9 +152,9 @@ def display():
 
     glPushMatrix()
 
-    obs[0] = raioxz * math.cos(2 * pi_value * tetaxz / 360)
-    obs[2] = raioxz * math.sin(2 * pi_value * tetaxz / 360)
-    gluLookAt(obs[0], obs[1], obs[2], look[0], look[1], look[2], 0.0, 1.0, 0.0)
+    watcher_coordinates[0] = raioxz * math.cos(2 * pi_value * tetaxz / 360)
+    watcher_coordinates[2] = raioxz * math.sin(2 * pi_value * tetaxz / 360)
+    gluLookAt(watcher_coordinates[0], watcher_coordinates[1], watcher_coordinates[2], target_coordinates[0], target_coordinates[1], target_coordinates[2], 0.0, 1.0, 0.0)
     glCallList(moon)
     glEnable(GL_TEXTURE_2D)
 
@@ -168,7 +176,7 @@ def display():
 
     glTranslatef(position[0], position[1], position[2])
     glRotatef(ang[3], ang[0], ang[1], ang[2])
-    #glScalef(0.3, 0.3, 0.3)
+
 
     glColor4f(airplane_color[0], airplane_color[1], airplane_color[2], airplane_color[3])
     glBindTexture(GL_TEXTURE_2D, texture_airplane)
@@ -184,19 +192,19 @@ def display():
 def specialKeyboard(key, x, y):
     global tetaxz
 
-    if key == GLUT_KEY_UP:
-        obs[1] = obs[1] + 1
+    if key == GLUT_KEY_UP:       # up arrow key increases the watcher position at the y axis
+        watcher_coordinates[1] = watcher_coordinates[1] + 1
         glutPostRedisplay()
 
-    elif key == GLUT_KEY_DOWN:
-        obs[1] = obs[1] - 1
+    elif key == GLUT_KEY_DOWN:   # down arrow key decreases the watcher position at the y axis
+        watcher_coordinates[1] = watcher_coordinates[1] - 1
         glutPostRedisplay()
 
-    elif key == GLUT_KEY_LEFT:
+    elif key == GLUT_KEY_LEFT:   # left arrow key rotates the watcher position at the y axis counterclockwisely
         tetaxz += 2
         glutPostRedisplay()
 
-    elif key == GLUT_KEY_RIGHT:
+    elif key == GLUT_KEY_RIGHT:  # left arrow key rotates the watcher position at the y axis clockwisely
         tetaxz -= 2
         glutPostRedisplay()
 
@@ -205,29 +213,31 @@ def specialKeyboard(key, x, y):
 def keyboard(key, x, y):
     global raioxz, luz, key_press, autopilot, airplane_vel
 
-    if key == b'w':
-        move()
-        makeAirplane()
-        glutPostRedisplay()
+    if key == b'w' or key == b'W':  # w key moves the airplane forward
+        if not autopilot:
+            move()
+            makeAirplane()
+            glutPostRedisplay()
 
-    elif key == b'p':
+
+    elif key == b'p' or key == b'P':  # p key enables or disables autopilot
         autopilot = not autopilot
         makeAirplane()
         glutPostRedisplay()
 
-    elif key == b'a':
+    elif key == b'a' or key == b'A':  # a key rotates the airplane to the left
         ang[3] += 1
         makeAirplane()
         glutPostRedisplay()
         key_press = True
 
-    elif key == b'd':
+    elif key == b'd' or key == b'D':  # d key rotates the airplane to the right
         ang[3] -= 1
         makeAirplane()
         glutPostRedisplay()
         key_press = True
 
-    elif key == b'l':
+    elif key == b'l' or key == b'L':  # l key enables or disables lights
         luz = not luz
         if not luz:
             glDisable(GL_LIGHTING)
@@ -236,21 +246,20 @@ def keyboard(key, x, y):
         glutPostRedisplay()
         key_press = True
 
-    elif key == b'-':
+    elif key == b'-':                 # - key zoom-out
         raioxz = raioxz + 1
         glutPostRedisplay()
 
-
-    elif key == b'+':
+    elif key == b'+':                 # + key zoom-in
         raioxz = raioxz - 1
         if (raioxz == 0):
             raioxz = 1
         glutPostRedisplay()
 
-    elif key == b'V':
+    elif key == b'V':                 # V key increases the airplane speed
         airplane_vel += 1
 
-    elif key == b"v":
+    elif key == b'v':                 # V key decreases the airplane speed
         if airplane_vel > 1:
             airplane_vel -= 1
 
@@ -300,8 +309,8 @@ def loadTextures():
 # Function that moves the airplane horizontally
 def move():
     global airplane_vel
-    quad = ((ang[3] % 360) // 90) + 1
-    d = ((ang[3] % 90) * 100)/900000
+    quad = ((ang[3] % 360) // 90) + 1  # defining in witch quadrant the airplane is moving
+    d = ((ang[3] % 90) * 100)/900000   # defining the distance percentual for how close it is from quadrant end
 
     if quad == 4:
         position[2] += d * airplane_vel
@@ -315,7 +324,7 @@ def move():
     elif quad == 1:
         position[0] += d * airplane_vel
         position[2] += (0.01 - d) * airplane_vel
-    print(airplane_vel)
+
 
 
 # Airplane animation function
@@ -329,9 +338,9 @@ def airplaneFlight(value):
 
 # Init function
 def init():
-    loadTextures()              # Loading and building textures
+    loadTextures()               # Loading and building textures
     makeAirplane()               # Modelling the airplane and associating to the airplane list id var
-    makeMoon()                      # Modelling the moon and associating to the moon list id var
+    makeMoon()                   # Modelling the moon and associating to the moon list id var
     glShadeModel(GL_FLAT)
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_BLEND)
@@ -350,12 +359,12 @@ def main():
     if (not glutCreateWindow("Airplane Flights MCZ")) :
         print("Error: Could not open the window.\n")
 
-    init()                             # Call of the init func
-    glutKeyboardFunc(keyboard)         # Sets the keyboard callback for the current window
-    glutSpecialFunc(specialKeyboard)   # Sets the special keyboard callback for the current window
-    glutDisplayFunc(display)           # Sets the display callback for the current window
-    glutReshapeFunc(reshape)           # Sets the reshape callback for the current window
-    glutTimerFunc(20, airplaneFlight, 1)      # Sets a function will be called after 5ms for the airplane animation
+    init()                                # Call of the init func
+    glutKeyboardFunc(keyboard)            # Sets the keyboard callback for the current window
+    glutSpecialFunc(specialKeyboard)      # Sets the special keyboard callback for the current window
+    glutDisplayFunc(display)              # Sets the display callback for the current window
+    glutReshapeFunc(reshape)              # Sets the reshape callback for the current window
+    glutTimerFunc(20, airplaneFlight, 1)  # Sets a function will be called after 5ms for the airplane animation
     glutMainLoop()
 
 
