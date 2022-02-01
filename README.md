@@ -9,7 +9,7 @@ O projeto consiste em modelar um avião usando Textura e Iluminação e simular 
 
 * É possível controlar o avião usando o teclado de modo a simular o sobrevoo sobre uma parte da cidade;
 * A cidade foi simulada através do mapeamento de textura de uma imagem aérea noturna no formato jpg;
-* A iluminação foi usada na cabine do avião e na lua.
+* A iluminação foi usada na cabine do avião e em uma lua modelada tendo como base projetos anteriores da disciplina.
 
 <p align="center">
   <img alt="Avião em Sobrevoo" height="400"  src="Examples/sobrevoo.jpeg">
